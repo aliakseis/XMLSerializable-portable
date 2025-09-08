@@ -55,7 +55,7 @@ static void startElementNs(void *userData,
     const char* rawName = nullptr;
     if (!local_utf8.empty()) rawName = (const char*)local_utf8.c_str();
 
-    ctx->handler->startElement(nullptr, 0, nullptr, 0, rawName, (int)local_utf8.size(), &attrs);
+    ctx->handler->startElement(rawName, (int)local_utf8.size(), &attrs);
     ctx->textBuffer.clear();
 }
 
@@ -82,7 +82,7 @@ static void endElementNs(void *userData,
     const char* rawName = nullptr;
     if (!local_utf8.empty()) rawName = (const char*)local_utf8.c_str();
 
-    ctx->handler->endElement(nullptr, 0, nullptr, 0, rawName, (int)local_utf8.size());
+    ctx->handler->endElement(rawName, (int)local_utf8.size());
 }
 
 static void characters(void *userData, const xmlChar *ch, int len)

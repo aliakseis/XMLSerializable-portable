@@ -31,10 +31,6 @@ CSAXObjectContentHandlerImpl::~CSAXObjectContentHandlerImpl()
 
 #if 1
 HRESULT CSAXObjectContentHandlerImpl::startElement( 
-    /* [in] */ const char*,
-    /* [in] */ int ,
-    /* [in] */ const char*,
-    /* [in] */ int ,
     /* [in] */ const char* pwchLocalName,
     /* [in] */ int cchLocalName,
     /* [in] */ const PortableAttributes* pAttributes)
@@ -116,10 +112,6 @@ HRESULT CSAXObjectContentHandlerImpl::startElement(
        
 HRESULT CSAXObjectContentHandlerImpl::endElement( 
             /* [in] */ const char*,
-            /* [in] */ int ,
-            /* [in] */ const char*,
-            /* [in] */ int ,
-            /* [in] */ const char*,
             /* [in] */ int )
 {
 	if (m_stObjPushedFlags.top())
@@ -169,8 +161,6 @@ HRESULT CSAXObjectContentHandlerImpl::processingInstruction(
 #if 0
 // Portable startElement: build STRING_DATA from PortableAttributes
 HRESULT CSAXObjectContentHandlerImpl::startElement(
-        const char* /*pwchNamespaceUri*/, int /*cchNamespaceUri*/,
-        const char* /*pwchLocalName*/, int /*cchLocalName*/,
         const char*pwchRawName, int cchRawName,
         const PortableAttributes *pAttributes)
 {

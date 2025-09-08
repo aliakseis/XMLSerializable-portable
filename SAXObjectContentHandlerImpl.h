@@ -18,19 +18,11 @@ public:
 
 protected:
     HRESULT startElement( 
-        /* [in] */ const char*pwchNamespaceUri,
-        /* [in] */ int cchNamespaceUri,
-        /* [in] */ const char*pwchLocalName,
-        /* [in] */ int cchLocalName,
         /* [in] */ const char*pwchRawName,
         /* [in] */ int cchRawName,
         /* [in] */ const PortableAttributes* pAttributes) override;
     
     HRESULT endElement( 
-        /* [in] */ const char*pwchNamespaceUri,
-        /* [in] */ int cchNamespaceUri,
-        /* [in] */ const char*pwchLocalName,
-        /* [in] */ int cchLocalName,
         /* [in] */ const char*pwchRawName,
         /* [in] */ int cchRawName) override;
     
