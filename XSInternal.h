@@ -238,7 +238,7 @@ inline T* Append(std::deque<T>& v)
 #define META_PROP_INTERNAL(name)                                                \
     private:                                                                    \
         static bool ClassSet##name(CXmlSerializable* pObj                       \
-            , const char* pwszData, size_t nLength)                          \
+            , const char* pwszData, size_t nLength)                             \
         {                                                                       \
             return ReadField(pObj, static_cast<TheClass*>(pObj)->m_##name       \
                 , pwszData, nLength);                                           \
@@ -253,22 +253,22 @@ inline T* Append(std::deque<T>& v)
             static void Setup(CMetaInfo* pInfo)                                 \
             {                                                                   \
                 CDescriptor<id-1>::Setup(pInfo);                                \
-                pInfo->m_pSetDataFunc[ESetDataFuncPos].first = #name;          \
+                pInfo->m_pSetDataFunc[ESetDataFuncPos].first = #name;           \
                 pInfo->m_pSetDataFunc[ESetDataFuncPos].second = ClassSet##name; \
             }                                                                   \
             static void SaveAttributes(const TheClass* pObj                     \
-                , std::ostream& s)                                             \
+                , std::ostream& s)                                              \
             {                                                                   \
                 CDescriptor<id-1>::SaveAttributes(pObj, s);                     \
                 if (IsSerializatonNeeded(pObj->m_##name))                       \
                 {                                                               \
-                    s << " " #name "=\"";                                    \
+                    s << " " #name "=\"";                                       \
                     WriteField(s, pObj->m_##name);                              \
-                    s << "\"";                                                 \
+                    s << "\"";                                                  \
                 }                                                               \
             }                                                                   \
             static void SaveElements(const TheClass* pObj                       \
-                , std::ostream& s)                                             \
+                , std::ostream& s)                                              \
             {                                                                   \
                 CDescriptor<id-1>::SaveElements(pObj, s);                       \
             }                                                                   \
@@ -291,20 +291,20 @@ inline T* Append(std::deque<T>& v)
             static void Setup(CMetaInfo* pInfo)                                 \
             {                                                                   \
                 CDescriptor<id-1>::Setup(pInfo);                                \
-                pInfo->m_pAddObjFunc[EAddObjFuncPos].first = #name;            \
+                pInfo->m_pAddObjFunc[EAddObjFuncPos].first = #name;             \
                 pInfo->m_pAddObjFunc[EAddObjFuncPos].second = ClassAddNew##name;\
             }                                                                   \
             static void SaveAttributes(const TheClass* pObj                     \
-                , std::ostream& s)                                             \
+                , std::ostream& s)                                              \
             {                                                                   \
                 CDescriptor<id-1>::SaveAttributes(pObj, s);                     \
             }                                                                   \
             static void SaveElements(const TheClass* pObj                       \
-                , std::ostream& s)                                             \
+                , std::ostream& s)                                              \
             {                                                                   \
                 CDescriptor<id-1>::SaveElements(pObj, s);                       \
                 for (const auto& v : pObj->m_v##name)                           \
-                    v.ToXml(s, #name);                                         \
+                    v.ToXml(s, #name);                                          \
             }                                                                   \
         };
 
@@ -325,12 +325,12 @@ inline T* Append(std::deque<T>& v)
                 CDescriptor<id-1>::Setup(pInfo);                                \
             }                                                                   \
             static void SaveAttributes(const TheClass* pObj                     \
-                , std::ostream& s)                                             \
+                , std::ostream& s)                                              \
             {                                                                   \
                 CDescriptor<id-1>::SaveAttributes(pObj, s);                     \
             }                                                                   \
             static void SaveElements(const TheClass* pObj                       \
-                , std::ostream& s)                                             \
+                , std::ostream& s)                                              \
             {                                                                   \
                 CDescriptor<id-1>::SaveElements(pObj, s);                       \
             }                                                                   \
@@ -343,8 +343,8 @@ inline T* Append(std::deque<T>& v)
                 EAddObjFuncPos = -1                                             \
             };                                                                  \
             static void Setup(CMetaInfo*) {}                                    \
-            static void SaveAttributes(const TheClass*, std::ostream&) {}      \
-            static void SaveElements(const TheClass*, std::ostream&) {}        \
+            static void SaveAttributes(const TheClass*, std::ostream&) {}       \
+            static void SaveElements(const TheClass*, std::ostream&) {}         \
         };
 
 #define END_META_MAP                                                            \
@@ -364,23 +364,23 @@ inline T* Append(std::deque<T>& v)
             static const CFinalMetaInfo g_metaInfo;                             \
             return &g_metaInfo;                                                 \
         }                                                                       \
-        static void ToXml(const TheClass* pObj, std::ostream& s                \
-            , const char* pwszTag)                                                  \
+        static void ToXml(const TheClass* pObj, std::ostream& s                 \
+            , const char* pwszTag)                                              \
         {                                                                       \
-            s << "<" << pwszTag;                                               \
+            s << "<" << pwszTag;                                                \
             CFinalDescr::SaveAttributes(pObj, s);                               \
             if (CFinalDescr::EAddObjFuncPos > -1)                               \
             {                                                                   \
-                s << ">";                                                      \
+                s << ">";                                                       \
                 CFinalDescr::SaveElements(pObj, s);                             \
-                s << "</" << pwszTag << ">";                                  \
+                s << "</" << pwszTag << ">";                                    \
             }                                                                   \
             else                                                                \
-                s << "/>";                                                     \
+                s << "/>";                                                      \
         }                                                                       \
     public:                                                                     \
-        XS_API void ToXml(std::ostream& s                                      \
-            , const char* pwszRoot = NULL) const override                           \
+        XS_API void ToXml(std::ostream& s                                       \
+            , const char* pwszRoot = NULL) const override                       \
         {                                                                       \
-            ToXml(this, s, (NULL == pwszRoot)? "object" : pwszRoot);           \
+            ToXml(this, s, (NULL == pwszRoot)? "object" : pwszRoot);            \
         }
