@@ -10,11 +10,6 @@
 #include <iostream>
 #include <sstream> 
 
-#if !0
-extern int ParseXmlWithLibxml2(const char* utf8text, CSAXObjectContentHandlerImpl* handler);
-#endif
-
-
 
 
 class CEmployee : public CXmlSerializable
@@ -86,47 +81,17 @@ const char g_pszXml[] = R"(<ROOT>
 </Customers>
 </ROOT>)";
 
-/*
-class CComUsageScope
-{
-public:
-	CComUsageScope()	{ ::CoInitialize(NULL); }
-	~CComUsageScope()	{ ::CoUninitialize(); }
-};
-*/
 
 int main(int /*argc*/, char* /*argv[]*/)
 {
-	#if 0
-    CComUsageScope comUsageScope;
-#endif
-
-	#if 0
-    CComPtr<ISAXXMLReader> pSAXXMLReader;
-#endif
 	CSAXObjectContentHandlerImpl saxObjectContentHandler;
-
-	#if 0
-    HRESULT hr = pSAXXMLReader.CoCreateInstance(__uuidof(SAXXMLReader));
-    if (FAILED(hr)) return 1;
-    hr = pSAXXMLReader->putContentHandler(&saxObjectContentHandler);
-    if (FAILED(hr)) return 1;
-#else
-    //int hr = 0;
-#endif
-		//return 1;
 
 	CCustomersList customersList;
 	// add root objects
 	saxObjectContentHandler.AddRootObject("ROOT", &customersList);
 
-	#if 0
-    hr = pSAXXMLReader->parse(CComVariant(g_pszXml));
-    if (FAILED(hr)) return hr;
-#else
     auto hr = ParseXmlWithLibxml2(g_pszXml, &saxObjectContentHandler);
     if (hr != 0) return hr;
-#endif
 
 	std::ostringstream ostr;
 	customersList.ToXml(ostr);

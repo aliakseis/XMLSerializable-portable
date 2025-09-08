@@ -19,9 +19,6 @@ inline bool IsSerializatonNeeded(const std::basic_string<T>& str)
 
 //inline 
 bool IsSerializatonNeeded(const GUID& rGuid);
-//{
-//    return GUID() != rGuid;
-//}
 
 
 typedef bool (* SET_DATA_FUNC)(CXmlSerializable*, const char*, size_t);
@@ -43,17 +40,6 @@ template<>
 inline bool Convert(const char* pwsz, size_t nLength, GUID& out)
 {
     if (!pwsz) return false;
-#if 0
-    if (nLength > 0)
-    {
-        return SUCCEEDED(CLSIDFromString(
-            const_cast<LPOLESTR>((L'{' + std::string(pwsz, nLength) + L'}').c_str()), &out));
-    }
-    else
-    {
-        return SUCCEEDED(CLSIDFromString(const_cast<LPOLESTR>(pwsz), &out));
-    }
-#else
     // Parse formats: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx or with braces
     std::string s(pwsz, nLength);
     // remove braces
@@ -92,19 +78,7 @@ inline bool Convert(const char* pwsz, size_t nLength, GUID& out)
         out.Data4[2+i] = (uint8_t)((ee >> ((5-i)*8)) & 0xFF);
     }
     return true;
-#endif
 }
-/*
-template<>
-inline bool Convert(const char* pwsz, size_t nLength, std::string& out)
-{
-    if (nLength == 0) { out.clear(); return true; }
-    std::string ws(pwsz, nLength);
-    //std::wstring_convert<std::codecvt_utf8_utf16<char>> conv;
-    out = ws;
-    return true;
-}
-*/
 
 template<>
 inline bool Convert(const char* pwsz, size_t nLength, std::string& out)
@@ -112,13 +86,6 @@ inline bool Convert(const char* pwsz, size_t nLength, std::string& out)
     out.assign(pwsz, nLength);
     return true;
 }
-
-
-//inline std::ostream& 
-//operator <<(std::ostream& s, const std::string& rstr)
-//{
-//    return s << static_cast<const char*>(CAtlStringW(rstr.c_str(), (int)rstr.length()));
-//}
 
 
 template<typename T> 
@@ -150,17 +117,6 @@ inline void WriteField(std::ostream& s, const long& data)
 template<> 
 //inline 
 void WriteField(std::ostream& s, const GUID& data);
-/*
-{
-    OLECHAR wszGuid[100] = {0};
-    int nLength = StringFromGUID2(data, wszGuid, sizeof(wszGuid) / sizeof(wszGuid[0]));
-    if (nLength > 1)
-    {
-        wszGuid[nLength - 2] = 0;
-        s << wszGuid + 1;
-    }
-}
-*/
 
 #pragma intrinsic(memcmp)
 

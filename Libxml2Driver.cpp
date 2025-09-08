@@ -2,26 +2,15 @@
 #include "SAXObjectContentHandlerImpl.h"
 #include "PortableSAX.h"
 
-#if !0
 #include <libxml/parser.h>
 #include <libxml/xmlstring.h>
 #include <string>
-//#include <codecvt>
-//#include <locale>
 
 struct DriverCtx {
     CSAXContentHandlerImpl* handler{};
     std::string textBuffer; // UTF-8 buffer
 };
 
-// Helper to convert UTF-8 string to std::string
-/*
-static std::string utf8_to_wstring(const std::string& s) {
-    if (s.empty()) return {};
-    std::wstring_convert<std::codecvt_utf8_utf16<char>> conv;
-    return conv.from_bytes(s);
-}
-*/
 
 static void startElementNs(void *userData,
                            const xmlChar *localname,
@@ -50,7 +39,6 @@ static void startElementNs(void *userData,
 
     std::string local_utf8;
     if (localname) local_utf8 = reinterpret_cast<const char*>(localname);
-    //std::string wlocal = utf8_to_wstring(local_utf8);
 
     const char* rawName = nullptr;
     if (!local_utf8.empty()) rawName = (const char*)local_utf8.c_str();
@@ -69,7 +57,6 @@ static void endElementNs(void *userData,
 
     std::string local_utf8;
     if (localname) local_utf8 = reinterpret_cast<const char*>(localname);
-    //std::string wlocal = utf8_to_wstring(local_utf8);
 
     // Flush any buffered text
     if (!ctx->textBuffer.empty()) {
@@ -106,4 +93,3 @@ int ParseXmlWithLibxml2(const char* utf8text, CSAXObjectContentHandlerImpl* hand
     int ret = xmlSAXUserParseMemory(&sax, &ctx, utf8text, (int)strlen(utf8text));
     return ret == 0 ? 0 : -1;
 }
-#endif

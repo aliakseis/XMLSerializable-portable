@@ -11,5 +11,4 @@ struct PortableAttribute {
 struct PortableAttributes {
     std::vector<PortableAttribute> items;
     int getLength() const { return static_cast<int>(items.size()); }
-    //const PortableAttribute& at(int i) const { return items[static_cast<size_t>(i)]; }
 };

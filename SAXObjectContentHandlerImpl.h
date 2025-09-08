@@ -43,3 +43,5 @@ private:
 	std::stack<bool> m_stObjPushedFlags;
 	std::stack<CXmlSerializable*> m_stObjects;
 };
+
+int ParseXmlWithLibxml2(const char* utf8text, CSAXObjectContentHandlerImpl* handler);

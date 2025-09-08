@@ -1,21 +1,8 @@
 #include "XSPlatform.h"
-//#include <codecvt>
-//#include <locale>
 
 #include "SAXObjectContentHandlerImpl.h"
 #include "XSBase.h"
 
-/*
-#define RETURN_FAILED_HR(statement)	\
-{									\
-	HRESULT hr = (statement);		\
-	if (FAILED(hr))					\
-	{								\
-		ATLASSERT(FALSE);			\
-		return hr;					\
-	}								\
-}
-*/
 
 #ifndef E_FAIL
 #define E_FAIL (-1)
@@ -46,16 +33,12 @@ HRESULT CSAXObjectContentHandlerImpl::startElement(
 	}
 	else
 	{
-		CXmlSerializable* pParent = m_stObjects.top();
-		if (pParent != NULL)
+		if (CXmlSerializable* pParent = m_stObjects.top())
 		{
 			// Embedded objects
-			const CMetaInfo* pMetaInfo = pParent->GetMetaInfo();
-			if (pMetaInfo != NULL)
+			if (const CMetaInfo* pMetaInfo = pParent->GetMetaInfo())
 			{
-				STRING_DATA stringData;
-				stringData.pwsz = (const char*) pwchLocalName;
-				stringData.nLength = cchLocalName;
+                STRING_DATA stringData{ pwchLocalName, cchLocalName };
 
 				ADD_OBJ_FUNC_PAIR* pEnd
 					= pMetaInfo->m_pAddObjFunc + pMetaInfo->m_nAddObjFuncSize;
@@ -74,17 +57,11 @@ HRESULT CSAXObjectContentHandlerImpl::startElement(
 		m_stObjects.push(pObject);
 
 		const CMetaInfo* pMetaInfo = pObject->GetMetaInfo();
-		//int nLength = 0;
-		if (pMetaInfo != NULL && pAttributes != NULL
-			//&& (nLength = pAttributes->getLength())
-            )
+		if (pMetaInfo != NULL && pAttributes != NULL)
 		{	// Object properties
 			for (const auto& attr : pAttributes->items)
 			{
-                STRING_DATA stringData{ attr.localName.c_str(), attr.localName.length() };  //{0};
-
-				//RETURN_FAILED_HR(pAttributes->getLocalName(
-				//	i, (const char**)&stringData.pwsz, &stringData.nLength));
+                STRING_DATA stringData{ attr.localName.c_str(), attr.localName.length() };
 
 				SET_DATA_FUNC_PAIR* pEnd 
 					= pMetaInfo->m_pSetDataFunc + pMetaInfo->m_nSetDataFuncSize;
@@ -94,7 +71,6 @@ HRESULT CSAXObjectContentHandlerImpl::startElement(
 				{
 					const char*pwchValue = attr.value.c_str();
 					int cchValue = attr.value.length();
-					//RETURN_FAILED_HR(pAttributes->getValue(i, &pwchValue, &cchValue));
 					if (!pFind->second(pObject, (const char*) pwchValue, cchValue))
 					{
 						return E_FAIL;
