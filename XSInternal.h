@@ -4,6 +4,8 @@
 
 #include <string>
 #include <ostream>
+#include <sstream>
+#include <cstring>
 
 inline bool IsSerializatonNeeded(...)
 {
@@ -32,7 +34,7 @@ inline bool Convert(const char* pwsz, size_t nLength, T& out)
     {
         return true;
     }
-    return !(std::wistringstream(std::string(pwsz, nLength)) >> out).fail();
+    return !(std::istringstream(std::string(pwsz, nLength)) >> out).fail();
 }
 
 
@@ -43,8 +45,8 @@ inline bool Convert(const char* pwsz, size_t nLength, GUID& out)
     // Parse formats: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx or with braces
     std::string s(pwsz, nLength);
     // remove braces
-    if (!s.empty() && s.front() == L'{') s = s.substr(1);
-    if (!s.empty() && s.back() == L'}') s = s.substr(0, s.size()-1);
+    if (!s.empty() && s.front() == '{') s = s.substr(1);
+    if (!s.empty() && s.back() == '}') s = s.substr(0, s.size()-1);
     // expected 36 chars with hyphens
     if (s.size() != 36) return false;
     auto hex = [&](char c)->int {
@@ -118,7 +120,6 @@ template<>
 //inline 
 void WriteField(std::ostream& s, const GUID& data);
 
-#pragma intrinsic(memcmp)
 
 // STRING_DATA construction should be re-enterable 
 struct STRING_DATA
@@ -128,8 +129,6 @@ struct STRING_DATA
 
     template<typename T> STRING_DATA& operator = (const T& src)
     {
-        // Use cast to ensure that we only allow character arrays
-        (static_cast<const char[sizeof(src) / sizeof(src[0])]>(src));
         pwsz = src;
         nLength = sizeof(src) / sizeof(src[0]) - 1;
         return *this;
@@ -142,7 +141,6 @@ struct STRING_DATA
     }
 };
 
-#pragma function(memcmp)
 
 template<typename T>
 inline bool operator == (const std::pair<STRING_DATA, T>& left, const STRING_DATA& right)
@@ -196,7 +194,7 @@ class CMetaInfoData<T, 0>
 public:
     CMetaInfoData()
     {
-        static_cast<T*>(this)->m_pSetDataFunc = NULL;
+        static_cast<T*>(this)->m_pSetDataFunc = nullptr;
         static_cast<T*>(this)->m_nSetDataFuncSize = 0;
     }
 };
@@ -220,7 +218,7 @@ class CMetaInfoObj<T, 0>
 public:
     CMetaInfoObj()
     {
-        static_cast<T*>(this)->m_pAddObjFunc = NULL;
+        static_cast<T*>(this)->m_pAddObjFunc = nullptr;
         static_cast<T*>(this)->m_nAddObjFuncSize = 0;
     }
 };
@@ -380,7 +378,7 @@ inline T* Append(std::deque<T>& v)
         }                                                                       \
     public:                                                                     \
         XS_API void ToXml(std::ostream& s                                       \
-            , const char* pwszRoot = NULL) const override                       \
+            , const char* pwszRoot = nullptr) const override                       \
         {                                                                       \
-            ToXml(this, s, (NULL == pwszRoot)? "object" : pwszRoot);            \
+            ToXml(this, s, (nullptr == pwszRoot)? "object" : pwszRoot);            \
         }

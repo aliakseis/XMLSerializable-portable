@@ -22,15 +22,15 @@ struct CMetaInfo;
 
 class CXmlSerializable
 {
-friend class CSAXObjectContentHandlerImpl;
+friend class XmlObjectContentHandler;
 
 public:
     virtual ~CXmlSerializable() {}
 
-    virtual void ToXml(std::ostream&, const char* /*pwszRoot*/ = NULL) const {}
+    virtual void ToXml(std::ostream&, const char* /*pwszRoot*/ = nullptr) const {}
 
 private:
-    virtual const CMetaInfo* GetMetaInfo() const { return NULL; }
+    virtual const CMetaInfo* GetMetaInfo() const { return nullptr; }
 };
 
 
@@ -47,7 +47,7 @@ private:
     private:                                                                \
         XS_API const CMetaInfo* GetMetaInfo() const override;               \
     public:                                                                 \
-        XS_API void ToXml(std::ostream&, const char* = NULL) const override;
+        XS_API void ToXml(std::ostream&, const char* = nullptr) const override;
 
 #endif// XS_BASE
 

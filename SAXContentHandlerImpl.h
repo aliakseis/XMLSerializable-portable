@@ -1,40 +1,21 @@
-// SAXContentHandlerImpl.h: interface for the SAXContentHandlerImpl class.
-//
-//////////////////////////////////////////////////////////////////////
-
 #pragma once
-#include "XSPlatform.h"
-#include <string>
 
-// Portable shim with the same method names (HRESULT-like return)
-using HRESULT = long;
-#ifndef S_OK
-#define S_OK 0L
-#endif
+#include "PortableSAX.h"
 
-struct ISAXLocator; // not used
-
-struct PortableAttributes; // defined in PortableSAX.h
-
-class CSAXContentHandlerImpl
+// Parser-independent callbacks. Returning false aborts parsing.
+class XmlContentHandler
 {
 public:
-    CSAXContentHandlerImpl() {}
-    virtual ~CSAXContentHandlerImpl() {}
+    virtual ~XmlContentHandler() = default;
 
-    virtual HRESULT putDocumentLocator(ISAXLocator*) { return S_OK; }
-    virtual HRESULT startDocument() { return S_OK; }
-    virtual HRESULT endDocument() { return S_OK; }
-    virtual HRESULT startPrefixMapping(const char*, int, const char*, int) { return S_OK; }
-    virtual HRESULT endPrefixMapping(const char*, int) { return S_OK; }
-
-    // Portable overloads
-    virtual HRESULT startElement(const char* /*pwchRawName*/, int /*cchRawName*/,
-                                 const PortableAttributes* /*pAttributes*/) { return S_OK; }
-
-    virtual HRESULT endElement(const char*, int) { return S_OK; }
-    virtual HRESULT characters(const char*, int) { return S_OK; }
-    virtual HRESULT ignorableWhitespace(const char*, int) { return S_OK; }
-    virtual HRESULT processingInstruction(const char*, int, const char*, int) { return S_OK; }
-    virtual HRESULT skippedEntity(const char*, int) { return S_OK; }
+    virtual bool startElement(const char* localName, std::size_t nameLength,
+                              const PortableAttributes* attributes) = 0;
+    virtual bool endElement(const char* localName, std::size_t nameLength) = 0;
+    virtual bool characters(const char* text, std::size_t length) = 0;
+    virtual bool processingInstruction(const char* target, std::size_t targetLength,
+                                       const char* data, std::size_t dataLength)
+    {
+        (void)target; (void)targetLength; (void)data; (void)dataLength;
+        return true;
+    }
 };

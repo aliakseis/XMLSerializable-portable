@@ -13,14 +13,10 @@ add_executable(xmlserial
 target_include_directories(xmlserial PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_compile_definitions(xmlserial PRIVATE XS_BASE)
-#find_package(PkgConfig REQUIRED)
-#pkg_check_modules(LIBXML2 REQUIRED libxml-2.0)
-#target_compile_definitions(xmlserial PRIVATE XS_WINDOWS=0)
 
 find_package(LibXml2 REQUIRED)
 
 target_include_directories(xmlserial PRIVATE ${LIBXML2_INCLUDE_DIRS})
-#target_link_libraries(xmlserial PRIVATE ${LIBXML2_LIBRARIES})
 
 target_link_libraries(xmlserial PRIVATE LibXml2::LibXml2)
 

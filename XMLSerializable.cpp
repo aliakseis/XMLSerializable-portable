@@ -82,15 +82,15 @@ const char g_pszXml[] = R"(<ROOT>
 </ROOT>)";
 
 
-int main(int /*argc*/, char* /*argv[]*/)
+int main()
 {
-	CSAXObjectContentHandlerImpl saxObjectContentHandler;
+	XmlObjectContentHandler objectContentHandler;
 
 	CCustomersList customersList;
 	// add root objects
-	saxObjectContentHandler.AddRootObject("ROOT", &customersList);
+	objectContentHandler.AddRootObject("ROOT", &customersList);
 
-    auto hr = ParseXmlWithLibxml2(g_pszXml, &saxObjectContentHandler);
+    auto hr = ParseXmlWithLibxml2(g_pszXml, &objectContentHandler);
     if (hr != 0) return hr;
 
 	std::ostringstream ostr;

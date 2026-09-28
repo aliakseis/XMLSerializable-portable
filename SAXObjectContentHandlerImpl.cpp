@@ -1,252 +1,100 @@
-#include "XSPlatform.h"
-
 #include "SAXObjectContentHandlerImpl.h"
 #include "XSBase.h"
 
+#include <algorithm>
+#include <cstdlib>
+#include <cstring>
 
-#ifndef E_FAIL
-#define E_FAIL (-1)
-#endif
-
-CSAXObjectContentHandlerImpl::CSAXObjectContentHandlerImpl()
+void XmlObjectContentHandler::AddRootObject(const std::string& name,
+                                            CXmlSerializable* object)
 {
+    m_rootObjects[name] = object;
 }
 
-CSAXObjectContentHandlerImpl::~CSAXObjectContentHandlerImpl()
+bool XmlObjectContentHandler::startElement(const char* localName,
+                                            std::size_t nameLength,
+                                            const PortableAttributes* attributes)
 {
-}
+    if (!localName && nameLength != 0)
+        return false;
 
-#if 1
-HRESULT CSAXObjectContentHandlerImpl::startElement( 
-    /* [in] */ const char* pwchLocalName,
-    /* [in] */ int cchLocalName,
-    /* [in] */ const PortableAttributes* pAttributes)
-{
-	CXmlSerializable* pObject = NULL;
+    const std::string name(localName ? localName : "", nameLength);
+    CXmlSerializable* object = nullptr;
 
-	if (m_stObjects.empty())
-	{
-		std::string strLocalName(pwchLocalName, pwchLocalName + cchLocalName);
-		CMapObjects::iterator iter = m_mapRootObjects.find(strLocalName);
-		if (iter != m_mapRootObjects.end())
-			pObject = iter->second;
-	}
-	else
-	{
-		if (CXmlSerializable* pParent = m_stObjects.top())
-		{
-			// Embedded objects
-			if (const CMetaInfo* pMetaInfo = pParent->GetMetaInfo())
-			{
-                STRING_DATA stringData{ pwchLocalName, cchLocalName };
-
-				ADD_OBJ_FUNC_PAIR* pEnd
-					= pMetaInfo->m_pAddObjFunc + pMetaInfo->m_nAddObjFuncSize;
-				ADD_OBJ_FUNC_PAIR* pFind
-					= std::find(pMetaInfo->m_pAddObjFunc, pEnd, stringData);
-				if (pFind != pEnd)
-				{
-					pObject = pFind->second(pParent);
-				}
-			}
-		}
-	}
-
-	if (pObject != NULL)
-	{
-		m_stObjects.push(pObject);
-
-		const CMetaInfo* pMetaInfo = pObject->GetMetaInfo();
-		if (pMetaInfo != NULL && pAttributes != NULL)
-		{	// Object properties
-			for (const auto& attr : pAttributes->items)
-			{
-                STRING_DATA stringData{ attr.localName.c_str(), attr.localName.length() };
-
-				SET_DATA_FUNC_PAIR* pEnd 
-					= pMetaInfo->m_pSetDataFunc + pMetaInfo->m_nSetDataFuncSize;
-				SET_DATA_FUNC_PAIR* pFind 
-					= std::find(pMetaInfo->m_pSetDataFunc, pEnd, stringData);
-				if (pFind != pEnd)
-				{
-					const char*pwchValue = attr.value.c_str();
-					int cchValue = attr.value.length();
-					if (!pFind->second(pObject, (const char*) pwchValue, cchValue))
-					{
-						return E_FAIL;
-					}
-				}
-			}
-		}
-	}
-
-	m_stObjPushedFlags.push(pObject != NULL);
-
-    return S_OK;
-}
-#endif   
-       
-HRESULT CSAXObjectContentHandlerImpl::endElement( 
-            /* [in] */ const char*,
-            /* [in] */ int )
-{
-	if (m_stObjPushedFlags.top())
-		m_stObjects.pop();
-	m_stObjPushedFlags.pop();
-
-    return S_OK;
-}
-        
-HRESULT CSAXObjectContentHandlerImpl::characters( 
-            /* [in] */ const char*,
-            /* [in] */ int )
-{
-    return S_OK;
-}
-        
-void CSAXObjectContentHandlerImpl::AddRootObject(const char* pwszName, CXmlSerializable* pObject)
-{
-	m_mapRootObjects[pwszName] = pObject;
-}
-
-const char wszMSSQLError[] = "MSSQLError";
-const char wszHResult[] = "HResult=\"0x";
-
-HRESULT CSAXObjectContentHandlerImpl::processingInstruction( 
-            /* [in] */ const char*pwchTarget,
-            /* [in] */ int cchTarget,
-            /* [in] */ const char*pwchData,
-            /* [in] */ int cchData)
-{
-	//MSSQLError
-	if (cchTarget == sizeof(wszMSSQLError) / sizeof(wszMSSQLError[0]) - 1 
-		&& !memcmp(wszMSSQLError, pwchTarget, sizeof(wszMSSQLError) - sizeof(char)))
-	{
-		if (cchData > sizeof(wszHResult) / sizeof(wszHResult[0]) - 1 
-			&& !memcmp(wszHResult, pwchData, sizeof(wszHResult) - sizeof(char)))
-		{
-			long hr = strtoul((const char*)pwchData + sizeof(wszHResult) / sizeof(wszHResult[0]) - 1, NULL, 16);
-			if (hr < 0)
-				return hr;
-		}
-		return E_FAIL;
-	}
-    return S_OK;
-}
-
-#if 0
-// Portable startElement: build STRING_DATA from PortableAttributes
-HRESULT CSAXObjectContentHandlerImpl::startElement(
-        const char*pwchRawName, int cchRawName,
-        const PortableAttributes *pAttributes)
-{
-    m_stObjPushedFlags.push(false);
-    CXmlSerializable* pParentObject = !m_stObjects.empty() ? m_stObjects.top() : NULL;
-
-    if (!pParentObject)
-    {   // Root object?
-        CMapObjects::iterator it = m_mapRootObjects.find(std::string((char*)pwchRawName, cchRawName));
-        if (it == m_mapRootObjects.end())
-        {
-            //ATLASSERT(FALSE);
-            return E_FAIL;
-        }
-        CXmlSerializable* pObject = it->second;
-        if (pObject)
-        {
-            m_stObjects.push(pObject);
-
-            const CMetaInfo* pMetaInfo = pObject->GetMetaInfo();
-            if (pMetaInfo && pAttributes)
-            {
-                // convert attribute names/values to wide strings and keep them alive during processing
-                //std::vector<std::string> convNames; convNames.reserve(pAttributes->getLength());
-                //std::vector<std::string> convVals; convVals.reserve(pAttributes->getLength());
-                //for (int i = 0; i < pAttributes->getLength(); ++i)
-                for (const auto& attr: pAttributes->items)
-                {
-                    //const auto &attr = pAttributes->at(i);
-                    //std::wstring_convert<std::codecvt_utf8_utf16<char>> conv;
-                    //convNames.push_back(attr.localName);
-                    //convVals.push_back(attr.value);
-                //}
-                //for (int i = 0; i < pAttributes->getLength(); ++i)
-                //{
-                    STRING_DATA stringData{};
-                    stringData.pwsz = attr.localName.c_str();
-                    stringData.nLength = static_cast<int>(attr.localName.size());
-
-                    SET_DATA_FUNC_PAIR* pEnd = pMetaInfo->m_pSetDataFunc + pMetaInfo->m_nSetDataFuncSize;
-                    SET_DATA_FUNC_PAIR* pFind = std::find(pMetaInfo->m_pSetDataFunc, pEnd, stringData);
-                    if (pFind != pEnd)
-                    {
-                        if (!pFind->second(pObject, attr.value.c_str(), static_cast<int>(attr.value.size())))
-                            return E_FAIL;
-                    }
-                }
+    if (m_objects.empty()) {
+        const auto it = m_rootObjects.find(name);
+        if (it != m_rootObjects.end())
+            object = it->second;
+    } else if (CXmlSerializable* parent = m_objects.top()) {
+        if (const CMetaInfo* info = parent->GetMetaInfo()) {
+            const STRING_DATA key{ name.c_str(), static_cast<int>(name.size()) };
+            if (info->m_pAddObjFunc && info->m_nAddObjFuncSize > 0) {
+                auto* end = info->m_pAddObjFunc + info->m_nAddObjFuncSize;
+                auto* found = std::find(info->m_pAddObjFunc, end, key);
+                if (found != end)
+                    object = found->second(parent);
             }
         }
-        return S_OK;
     }
 
-    // Child object?
-    {
-        const CMetaInfo* pMetaInfo = pParentObject->GetMetaInfo();
-        if (!pMetaInfo)
-            return E_FAIL;
-
-        CXmlSerializable* pObject = NULL;
-
-        STRING_DATA stringData{};
-        stringData.pwsz = (const char*)pwchRawName;
-        stringData.nLength = cchRawName;
-
-        ADD_OBJ_FUNC_PAIR* pEnd = pMetaInfo->m_pAddObjFunc + pMetaInfo->m_nAddObjFuncSize;
-        ADD_OBJ_FUNC_PAIR* pFind = std::find(pMetaInfo->m_pAddObjFunc, pEnd, stringData);
-        if (pFind != pEnd)
-        {
-            pObject = pFind->second(pParentObject);
-        }
-
-        if (!pObject)
-        {
-            // Simple value inside parent?
-            stringData.pwsz = ""; stringData.nLength = 0;
-            m_stObjects.push(pParentObject);
-            return S_OK;
-        }
-
-        m_stObjPushedFlags.top() = true;
-        m_stObjects.push(pObject);
-
-        const CMetaInfo* pChildMeta = pObject->GetMetaInfo();
-        if (pChildMeta && pAttributes)
-        {
-            //std::vector<std::string> convNames; convNames.reserve(pAttributes->getLength());
-            //std::vector<std::string> convVals; convVals.reserve(pAttributes->getLength());
-            //std::wstring_convert<std::codecvt_utf8_utf16<char>> conv;
-            //for (int i = 0; i < pAttributes->getLength(); ++i)
-            for (const auto& attr : pAttributes->items)
-            {
-                //const auto &attr = pAttributes->at(i);
-                //convNames.push_back(attr.localName);
-                //convVals.push_back(attr.value);
-            //}
-            //for (int i = 0; i < pAttributes->getLength(); ++i)
-            //{
-                STRING_DATA stringData2{};
-                stringData2.pwsz = attr.localName.c_str();
-                stringData2.nLength = static_cast<int>(attr.localName.size());
-                SET_DATA_FUNC_PAIR* pEnd2 = pChildMeta->m_pSetDataFunc + pChildMeta->m_nSetDataFuncSize;
-                SET_DATA_FUNC_PAIR* pFind2 = std::find(pChildMeta->m_pSetDataFunc, pEnd2, stringData2);
-                if (pFind2 != pEnd2)
-                {
-                    if (!pFind2->second(pObject, attr.value.c_str(), static_cast<int>(attr.value.size())))
-                        return E_FAIL;
+    if (object) {
+        m_objects.push(object);
+        if (const CMetaInfo* info = object->GetMetaInfo(); info && attributes) {
+            for (const auto& attr : attributes->items) {
+                const STRING_DATA key{ attr.localName.c_str(),
+                                       static_cast<int>(attr.localName.size()) };
+                if (info->m_pSetDataFunc && info->m_nSetDataFuncSize > 0) {
+                    auto* end = info->m_pSetDataFunc + info->m_nSetDataFuncSize;
+                    auto* found = std::find(info->m_pSetDataFunc, end, key);
+                    if (found != end &&
+                        !found->second(object, attr.value.data(), attr.value.size()))
+                        return false;
                 }
             }
         }
     }
-    return S_OK;
+
+    m_objectPushed.push(object != nullptr);
+    return true;
 }
-#endif
+
+bool XmlObjectContentHandler::endElement(const char*, std::size_t)
+{
+    if (m_objectPushed.empty())
+        return false;
+    if (m_objectPushed.top()) {
+        if (m_objects.empty())
+            return false;
+        m_objects.pop();
+    }
+    m_objectPushed.pop();
+    return true;
+}
+
+bool XmlObjectContentHandler::characters(const char*, std::size_t)
+{
+    return true;
+}
+
+bool XmlObjectContentHandler::processingInstruction(const char* target,
+                                                      std::size_t targetLength,
+                                                      const char* data,
+                                                      std::size_t dataLength)
+{
+    static constexpr char sqlError[] = "MSSQLError";
+    static constexpr char hresultPrefix[] = "HResult=\"0x";
+
+    if (target && targetLength == sizeof(sqlError) - 1 &&
+        std::memcmp(target, sqlError, sizeof(sqlError) - 1) == 0) {
+        if (data && dataLength > sizeof(hresultPrefix) - 1 &&
+            std::memcmp(data, hresultPrefix, sizeof(hresultPrefix) - 1) == 0) {
+            char* end = nullptr;
+            const unsigned long value = std::strtoul(
+                data + sizeof(hresultPrefix) - 1, &end, 16);
+            if (end != data + sizeof(hresultPrefix) - 1 && value != 0)
+                return false;
+        }
+        return false;
+    }
+    return true;
+}

@@ -1,47 +1,27 @@
 #pragma once
-#include "SAXContentHandlerImpl.h"
-#include "PortableSAX.h"
 
+#include "SAXContentHandlerImpl.h"
 #include <map>
 #include <stack>
 
 class CXmlSerializable;
 
-class CSAXObjectContentHandlerImpl :
-	public CSAXContentHandlerImpl
+class XmlObjectContentHandler final : public XmlContentHandler
 {
 public:
-	CSAXObjectContentHandlerImpl();
-	~CSAXObjectContentHandlerImpl();
+    void AddRootObject(const std::string& name, CXmlSerializable* object);
 
-	void AddRootObject(const char* pwszName, CXmlSerializable* pObject); 
-
-protected:
-    HRESULT startElement( 
-        /* [in] */ const char*pwchRawName,
-        /* [in] */ int cchRawName,
-        /* [in] */ const PortableAttributes* pAttributes) override;
-    
-    HRESULT endElement( 
-        /* [in] */ const char*pwchRawName,
-        /* [in] */ int cchRawName) override;
-    
-    HRESULT characters( 
-        /* [in] */ const char*pwchChars,
-        /* [in] */ int cchChars) override;
-
-	HRESULT processingInstruction( 
-            /* [in] */ const char*pwchTarget,
-            /* [in] */ int cchTarget,
-            /* [in] */ const char*pwchData,
-            /* [in] */ int cchData) override;
+    bool startElement(const char* localName, std::size_t nameLength,
+                      const PortableAttributes* attributes) override;
+    bool endElement(const char* localName, std::size_t nameLength) override;
+    bool characters(const char* text, std::size_t length) override;
+    bool processingInstruction(const char* target, std::size_t targetLength,
+                               const char* data, std::size_t dataLength) override;
 
 private:
-	typedef std::map<std::string, CXmlSerializable*> CMapObjects;
-	CMapObjects m_mapRootObjects;
-
-	std::stack<bool> m_stObjPushedFlags;
-	std::stack<CXmlSerializable*> m_stObjects;
+    std::map<std::string, CXmlSerializable*> m_rootObjects;
+    std::stack<bool> m_objectPushed;
+    std::stack<CXmlSerializable*> m_objects;
 };
 
-int ParseXmlWithLibxml2(const char* utf8text, CSAXObjectContentHandlerImpl* handler);
+int ParseXmlWithLibxml2(const char* utf8Text, XmlContentHandler* handler);

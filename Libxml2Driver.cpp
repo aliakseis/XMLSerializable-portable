@@ -1,95 +1,85 @@
-#include "XSPlatform.h"
 #include "SAXObjectContentHandlerImpl.h"
-#include "PortableSAX.h"
 
 #include <libxml/parser.h>
-#include <libxml/xmlstring.h>
+#include <cstring>
 #include <string>
+#include <utility>
 
-struct DriverCtx {
-    CSAXContentHandlerImpl* handler{};
-    std::string textBuffer; // UTF-8 buffer
+namespace {
+struct ParserContext {
+    XmlContentHandler* handler = nullptr;
+    std::string text;
+    bool failed = false;
 };
 
-
-static void startElementNs(void *userData,
-                           const xmlChar *localname,
-                           const xmlChar *prefix,
-                           const xmlChar *URI,
-                           int nb_namespaces,
-                           const xmlChar **namespaces,
-                           int nb_attributes,
-                           int nb_defaulted,
-                           const xmlChar **attributes)
+void startElementNs(void* userData, const xmlChar* localName,
+                    const xmlChar*, const xmlChar*, int, const xmlChar**,
+                    int attributeCount, int, const xmlChar** attributes)
 {
-    (void)prefix; (void)URI; (void)nb_namespaces; (void)namespaces; (void)nb_defaulted;
-    DriverCtx* ctx = static_cast<DriverCtx*>(userData);
+    auto& ctx = *static_cast<ParserContext*>(userData);
+    if (ctx.failed) return;
 
-    PortableAttributes attrs;
-    // attributes array layout: for each attribute i: localname, prefix, URI, valueBegin, valueEnd
-    for (int i = 0; i < nb_attributes; ++i) {
-        const xmlChar* lname = attributes[i*5 + 0];
-        const xmlChar* value = attributes[i*5 + 3];
-        if (!lname) continue;
-        PortableAttribute pa;
-        pa.localName = reinterpret_cast<const char*>(lname);
-        if (value) pa.value = reinterpret_cast<const char*>(value);
-        attrs.items.push_back(std::move(pa));
+    PortableAttributes parsed;
+    for (int i = 0; i < attributeCount; ++i) {
+        const xmlChar* name = attributes[i * 5];
+        const xmlChar* begin = attributes[i * 5 + 3];
+        const xmlChar* end = attributes[i * 5 + 4];
+        if (!name) continue;
+
+        PortableAttribute attr;
+        attr.localName = reinterpret_cast<const char*>(name);
+        if (begin && end && end >= begin)
+            attr.value.assign(reinterpret_cast<const char*>(begin),
+                              static_cast<std::size_t>(end - begin));
+        parsed.items.push_back(std::move(attr));
     }
 
-    std::string local_utf8;
-    if (localname) local_utf8 = reinterpret_cast<const char*>(localname);
-
-    const char* rawName = nullptr;
-    if (!local_utf8.empty()) rawName = (const char*)local_utf8.c_str();
-
-    ctx->handler->startElement(rawName, (int)local_utf8.size(), &attrs);
-    ctx->textBuffer.clear();
+    const char* name = localName
+        ? reinterpret_cast<const char*>(localName) : "";
+    ctx.failed = !ctx.handler->startElement(name, std::strlen(name), &parsed);
+    ctx.text.clear();
 }
 
-static void endElementNs(void *userData,
-                         const xmlChar *localname,
-                         const xmlChar *prefix,
-                         const xmlChar *URI)
+void endElementNs(void* userData, const xmlChar* localName,
+                  const xmlChar*, const xmlChar*)
 {
-    (void)prefix; (void)URI;
-    DriverCtx* ctx = static_cast<DriverCtx*>(userData);
+    auto& ctx = *static_cast<ParserContext*>(userData);
+    if (ctx.failed) return;
 
-    std::string local_utf8;
-    if (localname) local_utf8 = reinterpret_cast<const char*>(localname);
-
-    // Flush any buffered text
-    if (!ctx->textBuffer.empty()) {
-        //std::string wtxt = utf8_to_wstring(ctx->textBuffer);
-        const char* txt = (const char*)ctx->textBuffer.c_str();
-        ctx->handler->characters(txt, (int)ctx->textBuffer.size());
-        ctx->textBuffer.clear();
+    if (!ctx.text.empty()) {
+        ctx.failed = !ctx.handler->characters(ctx.text.data(), ctx.text.size());
+        ctx.text.clear();
+        if (ctx.failed) return;
     }
 
-    const char* rawName = nullptr;
-    if (!local_utf8.empty()) rawName = (const char*)local_utf8.c_str();
-
-    ctx->handler->endElement(rawName, (int)local_utf8.size());
+    const char* name = localName
+        ? reinterpret_cast<const char*>(localName) : "";
+    ctx.failed = !ctx.handler->endElement(name, std::strlen(name));
 }
 
-static void characters(void *userData, const xmlChar *ch, int len)
+void characters(void* userData, const xmlChar* text, int length)
 {
-    DriverCtx* ctx = static_cast<DriverCtx*>(userData);
-    if (ch && len > 0) {
-        ctx->textBuffer.append(reinterpret_cast<const char*>(ch), len);
-    }
+    auto& ctx = *static_cast<ParserContext*>(userData);
+    if (!ctx.failed && text && length > 0)
+        ctx.text.append(reinterpret_cast<const char*>(text),
+                        static_cast<std::size_t>(length));
 }
+} // namespace
 
-int ParseXmlWithLibxml2(const char* utf8text, CSAXObjectContentHandlerImpl* handler)
+int ParseXmlWithLibxml2(const char* utf8Text, XmlContentHandler* handler)
 {
-    xmlSAXHandler sax = {};
+    if (!utf8Text || !handler)
+        return -1;
+
+    xmlSAXHandler sax{};
     sax.initialized = XML_SAX2_MAGIC;
     sax.startElementNs = startElementNs;
     sax.endElementNs = endElementNs;
     sax.characters = characters;
 
-    DriverCtx ctx; ctx.handler = handler;
-    if (!utf8text) return -1;
-    int ret = xmlSAXUserParseMemory(&sax, &ctx, utf8text, (int)strlen(utf8text));
-    return ret == 0 ? 0 : -1;
+    ParserContext context;
+    context.handler = handler;
+    const int result = xmlSAXUserParseMemory(
+        &sax, &context, utf8Text, static_cast<int>(std::strlen(utf8Text)));
+    return result == 0 && !context.failed ? 0 : -1;
 }

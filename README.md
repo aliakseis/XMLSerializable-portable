@@ -37,7 +37,7 @@ class CCustomersList : public CXmlSerializable
 };
 </pre>
 
-Microsoft SAX parser implementation is used here to read XML. The META_PROP and META_OBJECTS macros assemble mapping arrays of helper methods for the parser content handler and the bodies of the objects ToXml() methods.
+libxml2 SAX2 callbacks are used to read XML through a small parser-independent content-handler interface. The META_PROP and META_OBJECTS macros assemble mapping arrays of helper methods for the parser content handler and the bodies of the objects ToXml() methods.
 
 One small challenge here was finding a way to assemble something like a linked list at compile time to glue properties declarations together. The solution found is to use templatized inner classes along with the \_\_LINE__ macro (this code is a part of the META_PROP macro, back slashes at the row ends are omitted here, all the \_\_LINE__ values are equal inside each META_PROP or META_OBJECTS macro):
 
@@ -87,17 +87,17 @@ The XS_BASE macro can be manipulated to hide implementation details in the separ
 The sample application is intended to demonsrate the mechanism proposed. It just loads an XML document example to the data object and then makes the object write itself to the standard output stream. It's as simple as that (error handling omitted for brevity):
 
 <pre>CComPtr&lt;ISAXXMLReader> pSAXXMLReader;
-CSAXObjectContentHandlerImpl saxObjectContentHandler;
+XmlObjectContentHandler objectContentHandler;
 
-HRESULT hr = pSAXXMLReader.CoCreateInstance(__uuidof(SAXXMLReader));
+int result = ParseXmlWithLibxml2(xmlText, &objectContentHandler);
 
-hr = pSAXXMLReader->putContentHandler(&saxObjectContentHandler);
+
 
 CCustomersList customersList;
 // add root objects
-saxObjectContentHandler.AddRootObject(L"ROOT", &customersList);
+objectContentHandler.AddRootObject(L"ROOT", &customersList);
 
-hr = pSAXXMLReader->parse(CComVariant(g_pszXml));
+
 
 std::wostringstream ostr;
 customersList.ToXml(ostr);

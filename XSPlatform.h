@@ -6,13 +6,16 @@
 #include <assert.h>
 #include <cstdint>
 
-// Portable GUID definition for non-Windows platforms
+#if defined(_WIN32)
+  #include <guiddef.h>
+#else
 struct GUID {
-    uint32_t Data1;
-    uint16_t Data2;
-    uint16_t Data3;
-    uint8_t  Data4[8];
+    std::uint32_t Data1{};
+    std::uint16_t Data2{};
+    std::uint16_t Data3{};
+    std::uint8_t Data4[8]{};
 };
+#endif
 
 // Export/import
 #if defined(_MSC_VER)
