@@ -306,11 +306,16 @@ inline T* Append(std::deque<T>& v)
             }                                                                   \
         };
 
-#define BEGIN_META_MAP(classname)                                               \
+#define BEGIN_META_MAP                                                          \
         template<int id, int> friend struct CDescriptor;                        \
     private:                                                                    \
         enum { ID_REFERENCE_POINT = __COUNTER__ };                              \
-        typedef classname TheClass;                                             \
+        auto _self_fn() -> void;                                                \
+        template<typename T> struct _SelfExtractor;                             \
+        template<typename R, typename C> struct _SelfExtractor<R(C::*)()> {     \
+                using type = C;                                                 \
+        };                                                                      \
+        using TheClass = typename _SelfExtractor<decltype(&_self_fn)>::type;    \
         template<int id, int=id> struct CDescriptor                             \
         {                                                                       \
             enum                                                                \

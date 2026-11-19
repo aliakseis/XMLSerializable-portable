@@ -15,7 +15,7 @@
 class CEmployee : public CXmlSerializable
 {
 public:
-	BEGIN_META_MAP(CEmployee)
+	BEGIN_META_MAP
 		META_PROP(CSTLString,	Region)
 	END_META_MAP
 };
@@ -23,7 +23,7 @@ public:
 
 class COrder : public CXmlSerializable
 {
-	BEGIN_META_MAP(COrder)
+	BEGIN_META_MAP
 		META_PROP(CSTLString,	ShipCity)
 		META_PROP(CSTLString,	EmployeeName)
 		META_OBJECTS(CEmployee,	Employees)
@@ -32,7 +32,7 @@ class COrder : public CXmlSerializable
 
 class CCustomer : public CXmlSerializable
 {
-	BEGIN_META_MAP(CCustomer)
+	BEGIN_META_MAP
 		META_PROP(CSTLString,	CustomerID)
 		META_PROP(CSTLString,	ContactName)
 		META_OBJECTS(COrder,	Orders)
@@ -41,7 +41,7 @@ class CCustomer : public CXmlSerializable
 
 class CCustomersList : public CXmlSerializable
 {
-	BEGIN_META_MAP(CCustomersList)
+	BEGIN_META_MAP
 		META_OBJECTS(CCustomer,	Customers)
 	END_META_MAP
 };
@@ -90,8 +90,8 @@ int main()
 	// add root objects
 	objectContentHandler.AddRootObject("ROOT", &customersList);
 
-    auto hr = ParseXmlWithLibxml2(g_pszXml, &objectContentHandler);
-    if (hr != 0) return hr;
+    if(!ParseXmlWithLibxml2(g_pszXml, &objectContentHandler))
+        return EXIT_FAILURE;
 
 	std::ostringstream ostr;
 	customersList.ToXml(ostr);

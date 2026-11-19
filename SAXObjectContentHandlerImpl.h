@@ -24,4 +24,4 @@ private:
     std::stack<CXmlSerializable*> m_objects;
 };
 
-int ParseXmlWithLibxml2(const char* utf8Text, XmlContentHandler* handler);
+bool ParseXmlWithLibxml2(const char* utf8Text, XmlContentHandler* handler);

@@ -42,7 +42,7 @@ private:
 
 #define META_PROP_INTERNAL(name)
 #define META_OBJECTS_INTERNAL(name)
-#define BEGIN_META_MAP(classname)
+#define BEGIN_META_MAP
 #define END_META_MAP                                                        \
     private:                                                                \
         XS_API const CMetaInfo* GetMetaInfo() const override;               \

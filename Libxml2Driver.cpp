@@ -66,10 +66,10 @@ void characters(void* userData, const xmlChar* text, int length)
 }
 } // namespace
 
-int ParseXmlWithLibxml2(const char* utf8Text, XmlContentHandler* handler)
+bool ParseXmlWithLibxml2(const char* utf8Text, XmlContentHandler* handler)
 {
     if (!utf8Text || !handler)
-        return -1;
+        return false;
 
     xmlSAXHandler sax{};
     sax.initialized = XML_SAX2_MAGIC;
@@ -81,5 +81,5 @@ int ParseXmlWithLibxml2(const char* utf8Text, XmlContentHandler* handler)
     context.handler = handler;
     const int result = xmlSAXUserParseMemory(
         &sax, &context, utf8Text, static_cast<int>(std::strlen(utf8Text)));
-    return result == 0 && !context.failed ? 0 : -1;
+    return result == 0 && !context.failed;
 }
